@@ -15,6 +15,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -28,6 +29,9 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.example.geo.databinding.FragmentHomeBinding;
 import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationCallback;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
 
 import java.io.IOException;
@@ -38,71 +42,87 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class HomeFragment extends Fragment {
-    private ActivityResultLauncher locationPermissionRequest;
-    private FusedLocationProviderClient mFusedLocationClient;
-
     private FragmentHomeBinding binding;
+    private ActivityResultLauncher<String[]> locationPermissionRequest;
+    private FusedLocationProviderClient mFusedLocationClient;
+    private boolean mTrackingLocation;
+    private LocationCallback mLocationCallback;
 
-    public View onCreateView(@NonNull LayoutInflater inflater,
-                             ViewGroup container, Bundle savedInstanceState) {
-        mFusedLocationClient = LocationServices.getFusedLocationProviderClient(getContext());
+
+
+    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         HomeViewModel homeViewModel = new ViewModelProvider(this).get(HomeViewModel.class);
 
         binding = FragmentHomeBinding.inflate(inflater, container, false);
         View root = binding.getRoot();
 
-        final TextView textView = binding.textolocalizazao;
-        homeViewModel.getText().observe(getViewLifecycleOwner(), textView::setText);
+        mFusedLocationClient = LocationServices.getFusedLocationProviderClient(requireContext());
 
-        binding.boton.setOnClickListener(v -> {
-            getLocation();
-
+        locationPermissionRequest = registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), result -> {
+            Boolean fineLocationGranted = result.getOrDefault(Manifest.permission.ACCESS_FINE_LOCATION, false);
+            Boolean coarseLocationGranted = result.getOrDefault(Manifest.permission.ACCESS_COARSE_LOCATION, false);
+            if (fineLocationGranted != null && fineLocationGranted) {
+                startTrackingLocation();
+            } else if (coarseLocationGranted != null && coarseLocationGranted) {
+                startTrackingLocation();
+            } else {
+                Toast.makeText(requireContext(), "No concedeixen permisos", Toast.LENGTH_SHORT).show();
+            }
         });
-        locationPermissionRequest = registerForActivityResult(new ActivityResultContracts
-                        .RequestMultiplePermissions(), result -> {
-                    Boolean fineLocationGranted = result.getOrDefault(
-                            Manifest.permission.ACCESS_FINE_LOCATION, false);
-                    Boolean coarseLocationGranted = result.getOrDefault(
-                            Manifest.permission.ACCESS_COARSE_LOCATION, false);
-                    if (fineLocationGranted != null && fineLocationGranted) {
-                        getLocation();
-                    } else if (coarseLocationGranted != null && coarseLocationGranted) {
-                        getLocation();
-                    } else {
-                        Toast.makeText(requireContext(), "No concedeixen permisos", Toast.LENGTH_SHORT).show();
-                    }
-                }
-        );
 
+        mLocationCallback = new LocationCallback() {
+            @Override
+            public void onLocationResult(LocationResult locationResult) {
+                if (locationResult != null) {
+                    fetchAddress(locationResult.getLastLocation());
+                } else {
+                    binding.textolocalizazao.setText("Sense localització coneguda");
+                }
+            }
+        };
+
+        binding.boton.setOnClickListener(view -> {
+            Toast.makeText(requireContext(), "Clicked Get Location", Toast.LENGTH_SHORT).show();
+            if (!mTrackingLocation) {
+                startTrackingLocation();
+            } else {
+                stopTrackingLocation();
+            }
+        });
 
         return root;
-
-
     }
-
-    private void getLocation() {
-        if (ContextCompat.checkSelfPermission(getContext(),
-                Manifest.permission.ACCESS_FINE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED) {
-
+    private void startTrackingLocation() {
+        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             Toast.makeText(requireContext(), "Request permisssions", Toast.LENGTH_SHORT).show();
-            locationPermissionRequest.launch(new String[]{
-                    Manifest.permission.ACCESS_FINE_LOCATION,
-                    Manifest.permission.ACCESS_COARSE_LOCATION
-            });
+            locationPermissionRequest.launch(new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION});
         } else {
             Toast.makeText(requireContext(), "getLocation: permissions granted", Toast.LENGTH_SHORT).show();
-            mFusedLocationClient.getLastLocation().addOnSuccessListener(
-                    location -> {
-                        if (location != null) {
-                            fetchAddress(location);
-                        } else {
-                            binding.textolocalizazao.setText("Sense localització coneguda");
-                        }
-                    });
+            mFusedLocationClient.requestLocationUpdates(getLocationRequest(), mLocationCallback, null);
         }
-
+        binding.textolocalizazao.setText("Carregant...");
+        binding.loading.setVisibility(ProgressBar.VISIBLE);
+        mTrackingLocation = true;
+        binding.boton.setText("Aturar el seguiment de la ubicació");
     }
+    private LocationRequest getLocationRequest() {
+        LocationRequest locationRequest = new LocationRequest();
+        locationRequest.setInterval(10000);
+        locationRequest.setFastestInterval(5000);
+        locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+        return locationRequest;
+    }
+
+    private void stopTrackingLocation() {
+        if (mTrackingLocation) {
+            binding.loading.setVisibility(ProgressBar.INVISIBLE);
+            mTrackingLocation = false;
+            binding.boton.setText("Comença a seguir la ubicació");
+            mFusedLocationClient.removeLocationUpdates(mLocationCallback);
+        }
+    }
+
+
     private void fetchAddress(Location location) {
         ExecutorService executor = Executors.newSingleThreadExecutor();
         Handler handler = new Handler(Looper.getMainLooper());
