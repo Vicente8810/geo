@@ -2,6 +2,7 @@ package com.example.geo;
 
 import static androidx.activity.result.ActivityResultCallerKt.registerForActivityResult;
 
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.util.Log;
@@ -19,14 +20,22 @@ import androidx.navigation.ui.NavigationUI;
 
 import com.example.geo.databinding.ActivityMainBinding;
 import com.example.geo.ui.home.SharedViewModel;
+import com.firebase.ui.auth.AuthUI;
+import com.firebase.ui.auth.FirebaseAuthUIActivityResultContract;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+
+import java.util.Arrays;
 
 public class MainActivity extends AppCompatActivity {
     private ActivityMainBinding binding;
     private ActivityResultLauncher<String[]> locationPermissionRequest;
     private SharedViewModel sharedViewModel;
+    private ActivityResultLauncher<Intent> signInLauncher;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,7 +62,7 @@ public class MainActivity extends AppCompatActivity {
         sharedViewModel.getCheckPermission().observe(this, s -> checkPermission());
 
         locationPermissionRequest = registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), result -> {
-            Boolean fineLocationGranted = result.getOrDefault(android.Manifest.permission.ACCESS_FINE_LOCATION, false);
+            Boolean fineLocationGranted  = result.getOrDefault(android.Manifest.permission.ACCESS_FINE_LOCATION, false);
             Boolean coarseLocationGranted = result.getOrDefault(android.Manifest.permission.ACCESS_COARSE_LOCATION, false);
             if (fineLocationGranted != null && fineLocationGranted) {
                 sharedViewModel.startTrackingLocation(false);
@@ -63,7 +72,24 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(this, "No concedeixen permisos", Toast.LENGTH_SHORT).show();
             }
         });
+
+            signInLauncher = registerForActivityResult(
+                    new FirebaseAuthUIActivityResultContract(),
+               
+                    (result) -> {
+                        if (result.getResultCode() == RESULT_OK) {
+                            FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+                            sharedViewModel.setUser(user);
+                            
+                        }
+                    });
+
+
+
+
+
     }
+
 
     void checkPermission() {
         Log.d("PERMISSIONS", "Check permisssions");

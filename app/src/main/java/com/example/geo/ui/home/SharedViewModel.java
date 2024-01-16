@@ -20,6 +20,7 @@ import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationCallback;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationResult;
+import com.google.firebase.auth.FirebaseUser;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -35,7 +36,16 @@ public class SharedViewModel extends AndroidViewModel {
         private final MutableLiveData<String> checkPermission = new MutableLiveData<>();
         private final MutableLiveData<String> buttonText = new MutableLiveData<>();
         private final MutableLiveData<Boolean> progressBar = new MutableLiveData<>();
+        private MutableLiveData<FirebaseUser> user = new MutableLiveData<>();
 
+         public LiveData<FirebaseUser> getUser()
+         {
+        return user;
+         }
+         public void setUser(FirebaseUser passedUser)
+         {
+        user.postValue(passedUser);
+         }
         private boolean mTrackingLocation;
         FusedLocationProviderClient mFusedLocationClient;
 
@@ -44,6 +54,7 @@ public class SharedViewModel extends AndroidViewModel {
 
             this.app = application;
         }
+
 
         public void setFusedLocationClient(FusedLocationProviderClient mFusedLocationClient) {
             this.mFusedLocationClient = mFusedLocationClient;

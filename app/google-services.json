@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "638348583669",
+    "project_id": "geoo-cea49",
+    "storage_bucket": "geoo-cea49.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:638348583669:android:c47a2686cd9ba97b559bbc",
+        "android_client_info": {
+          "package_name": "com.example.geo"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCkoEAZXEHxDEwVKDNejQEwfTw6-OGKVWY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
