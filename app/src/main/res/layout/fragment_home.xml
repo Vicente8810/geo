@@ -37,6 +37,10 @@
         android:layout_width="80dp"
         android:layout_height="71dp"
         android:visibility="invisible"
-        tools:layout_editor_absoluteX="165dp"
-        tools:layout_editor_absoluteY="177dp" />
+        app:layout_constraintBottom_toTopOf="@+id/textolocalizazao"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.498"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.649" />
 </androidx.constraintlayout.widget.ConstraintLayout>

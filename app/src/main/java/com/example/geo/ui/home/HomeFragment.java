@@ -43,12 +43,6 @@ import java.util.concurrent.Executors;
 
 public class HomeFragment extends Fragment {
     private FragmentHomeBinding binding;
-    private ActivityResultLauncher<String[]> locationPermissionRequest;
-    private FusedLocationProviderClient mFusedLocationClient;
-    private boolean mTrackingLocation;
-    private LocationCallback mLocationCallback;
-
-
 
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         HomeViewModel homeViewModel = new ViewModelProvider(this).get(HomeViewModel.class);
@@ -56,127 +50,27 @@ public class HomeFragment extends Fragment {
         binding = FragmentHomeBinding.inflate(inflater, container, false);
         View root = binding.getRoot();
 
-        mFusedLocationClient = LocationServices.getFusedLocationProviderClient(requireContext());
+        SharedViewModel sharedViewModel = new ViewModelProvider(getActivity()).get(SharedViewModel.class);
 
-        locationPermissionRequest = registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), result -> {
-            Boolean fineLocationGranted = result.getOrDefault(Manifest.permission.ACCESS_FINE_LOCATION, false);
-            Boolean coarseLocationGranted = result.getOrDefault(Manifest.permission.ACCESS_COARSE_LOCATION, false);
-            if (fineLocationGranted != null && fineLocationGranted) {
-                startTrackingLocation();
-            } else if (coarseLocationGranted != null && coarseLocationGranted) {
-                startTrackingLocation();
-            } else {
-                Toast.makeText(requireContext(), "No concedeixen permisos", Toast.LENGTH_SHORT).show();
-            }
+        SharedViewModel.getCurrentAddress().observe(getViewLifecycleOwner(), address -> {
+            binding.textolocalizazao.setText(String.format(
+                    "Direcció: %1$s \n Hora: %2$tr",
+                    address, System.currentTimeMillis()));
+        });
+        sharedViewModel.getButtonText().observe(getViewLifecycleOwner(), s -> binding.boton.setText(s));
+        sharedViewModel.getProgressBar().observe(getViewLifecycleOwner(), visible -> {
+            if (visible)
+                binding.loading.setVisibility(ProgressBar.VISIBLE);
+            else
+                binding.loading.setVisibility(ProgressBar.INVISIBLE);
         });
 
-        mLocationCallback = new LocationCallback() {
-            @Override
-            public void onLocationResult(LocationResult locationResult) {
-                if (locationResult != null) {
-                    fetchAddress(locationResult.getLastLocation());
-                } else {
-                    binding.textolocalizazao.setText("Sense localització coneguda");
-                }
-            }
-        };
-
         binding.boton.setOnClickListener(view -> {
-            Toast.makeText(requireContext(), "Clicked Get Location", Toast.LENGTH_SHORT).show();
-            if (!mTrackingLocation) {
-                startTrackingLocation();
-            } else {
-                stopTrackingLocation();
-            }
+            Log.d("DEBUG", "Clicked Get Location");
+            sharedViewModel.switchTrackingLocation();
         });
 
         return root;
-    }
-    private void startTrackingLocation() {
-        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            Toast.makeText(requireContext(), "Request permisssions", Toast.LENGTH_SHORT).show();
-            locationPermissionRequest.launch(new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION});
-        } else {
-            Toast.makeText(requireContext(), "getLocation: permissions granted", Toast.LENGTH_SHORT).show();
-            mFusedLocationClient.requestLocationUpdates(getLocationRequest(), mLocationCallback, null);
-        }
-        binding.textolocalizazao.setText("Carregant...");
-        binding.loading.setVisibility(ProgressBar.VISIBLE);
-        mTrackingLocation = true;
-        binding.boton.setText("Aturar el seguiment de la ubicació");
-    }
-    private LocationRequest getLocationRequest() {
-        LocationRequest locationRequest = new LocationRequest();
-        locationRequest.setInterval(10000);
-        locationRequest.setFastestInterval(5000);
-        locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
-        return locationRequest;
-    }
-
-    private void stopTrackingLocation() {
-        if (mTrackingLocation) {
-            binding.loading.setVisibility(ProgressBar.INVISIBLE);
-            mTrackingLocation = false;
-            binding.boton.setText("Comença a seguir la ubicació");
-            mFusedLocationClient.removeLocationUpdates(mLocationCallback);
-        }
-    }
-
-
-    private void fetchAddress(Location location) {
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        Handler handler = new Handler(Looper.getMainLooper());
-
-        Geocoder geocoder = new Geocoder(requireContext(),
-                Locale.getDefault());
-
-        executor.execute(() -> {
-
-            List<Address> addresses = null;
-            String resultMessage = "";
-
-            try {
-                addresses = geocoder.getFromLocation(
-                        location.getLatitude(),
-                        location.getLongitude(),
-
-                        1);
-
-
-                if (addresses == null || addresses.size() == 0) {
-                    if (resultMessage.isEmpty()) {
-                        resultMessage = "No s'ha trobat cap adreça";
-                        Log.e("INCIVISME", resultMessage);
-                    }
-                } else {
-                    Address address = addresses.get(0);
-                    ArrayList<String> addressParts = new ArrayList<>();
-
-                    for (int i = 0; i <= address.getMaxAddressLineIndex(); i++) {
-                        addressParts.add(address.getAddressLine(i));
-                    }
-
-                    resultMessage = join("\n", addressParts);
-                    String finalResultMessage = resultMessage;
-                    handler.post(() -> {
-
-                        binding.textolocalizazao.setText(String.format(
-                                "Direcció: %1$s \n Hora: %2$tr",
-                                finalResultMessage, System.currentTimeMillis()));
-                    });
-                }
-
-            } catch (IOException ioException) {
-                resultMessage = "Servei no disponible";
-                Log.e("INCIVISME", resultMessage, ioException);
-            } catch (IllegalArgumentException illegalArgumentException) {
-                resultMessage = "Coordenades no vàlides";
-                Log.e("INCIVISME", resultMessage + ". " +
-                        "Latitude = " + location.getLatitude() +
-                        ", Longitude = " +
-                        location.getLongitude(), illegalArgumentException);
-            }
-        });
     }
 
     @Override
@@ -184,5 +78,4 @@ public class HomeFragment extends Fragment {
         super.onDestroyView();
         binding = null;
     }
-
 }
