@@ -20,6 +20,7 @@ import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationCallback;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationResult;
+import com.google.android.gms.maps.model.LatLng;
 import com.google.firebase.auth.FirebaseUser;
 
 import java.io.IOException;
@@ -37,17 +38,24 @@ public class SharedViewModel extends AndroidViewModel {
         private final MutableLiveData<String> buttonText = new MutableLiveData<>();
         private final MutableLiveData<Boolean> progressBar = new MutableLiveData<>();
         private MutableLiveData<FirebaseUser> user = new MutableLiveData<>();
-
+    private final MutableLiveData<LatLng> currentLatLng = new MutableLiveData<>();
+    private boolean mTrackingLocation;
          public LiveData<FirebaseUser> getUser()
          {
         return user;
          }
+
          public void setUser(FirebaseUser passedUser)
          {
         user.postValue(passedUser);
          }
-        private boolean mTrackingLocation;
+
         FusedLocationProviderClient mFusedLocationClient;
+
+    public MutableLiveData<LatLng> getCurrentLatLng() {
+        return currentLatLng;
+    }
+
 
         public SharedViewModel(@NonNull Application application) {
             super(application);
@@ -142,6 +150,8 @@ public class SharedViewModel extends AndroidViewModel {
                 String resultMessage = "";
 
                 try {
+                    LatLng latlng = new LatLng(location.getLatitude(), location.getLongitude());
+                    currentLatLng.postValue(latlng);
                     addresses = geocoder.getFromLocation(location.getLatitude(), location.getLongitude(),
                             // En aquest cas, sols volem una única adreça:
                             1);
