@@ -34,6 +34,8 @@ import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -76,6 +78,25 @@ public class HomeFragment extends Fragment {
 
         sharedViewModel.getUser().observe(getViewLifecycleOwner(), user -> {
             authUser = user;
+        });
+
+        binding.buttonNotificar.setOnClickListener(button -> {
+
+            Incidencia incidencia = new Incidencia();
+            incidencia.setDireccio(binding.txtDireccio.getText().toString());
+            incidencia.setLatitud(binding.txtLatitud.getText().toString());
+            incidencia.setLongitud(binding.txtLongitud.getText().toString());
+            incidencia.setProblema(binding.txtDescripcio.getText().toString());
+
+            DatabaseReference base = FirebaseDatabase.getInstance("https://geoo-cea49-default-rtdb.europe-west1.firebasedatabase.app/"
+            ).getReference();
+
+            DatabaseReference users = base.child("users");
+            DatabaseReference uid = users.child(authUser.getUid());
+            DatabaseReference incidencies = uid.child("incidencies");
+
+            DatabaseReference reference = incidencies.push();
+            reference.setValue(incidencia);
         });
 
         return root;

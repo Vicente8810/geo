@@ -97,8 +97,8 @@ public class MainActivity extends AppCompatActivity {
                             .setIsSmartLockEnabled(false)
                             .setAvailableProviders(
                                     Arrays.asList(
-                                            new AuthUI.IdpConfig.EmailBuilder().build(),
-                                            new AuthUI.IdpConfig.GoogleBuilder().build()
+                                            new AuthUI.IdpConfig.EmailBuilder().build()
+
                                     )
                             )
                             .build();
@@ -107,6 +107,7 @@ public class MainActivity extends AppCompatActivity {
             sharedViewModel.setUser(auth.getCurrentUser());
         }
     }
+
 
 
     void checkPermission() {
