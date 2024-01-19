@@ -17,7 +17,7 @@ import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
 
 import com.example.geo.databinding.ActivityMainBinding;
-import com.example.geo.ui.home.SharedViewModel;
+import com.example.geo.data.SharedViewModel;
 import com.firebase.ui.auth.AuthUI;
 import com.firebase.ui.auth.FirebaseAuthUIActivityResultContract;
 import com.google.android.gms.location.FusedLocationProviderClient;

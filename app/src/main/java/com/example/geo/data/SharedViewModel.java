@@ -1,4 +1,4 @@
-package com.example.geo.ui.home;
+package com.example.geo.data;
 
 import android.annotation.SuppressLint;
 import android.app.Application;
